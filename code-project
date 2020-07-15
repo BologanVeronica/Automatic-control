@@ -3,6 +3,10 @@
 #include <Servo.h>
 Servo servo;
 
+#include "LedControl.h"
+LedControl lc=LedControl(12,11,7,1);
+unsigned long delaytime=400;
+
 #define mySerial Serial1
 #define PIN  9 //led-strip
 #define NUMPIXELS 10
@@ -10,6 +14,17 @@ Servo servo;
 #define LDRPIN A0 
 #define PIR 10
 #define buttonPin 3
+
+#define Rled 13
+#define Gled 9
+#define Bled 8
+#define JX A2
+#define JY A1
+#define JSW 6
+
+int joyX; 
+int joyY; 
+int joySW; 
 
 int buttonState = 0;
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
@@ -23,15 +38,28 @@ void setup()
   PIRInit();
   ButtonInit();
   OpenDoor();
+  SETMATRIX();
 
 }
 
 void loop()                    
 {
+   writeArduinoOnMatrix();
    SensorLightData();
    getFingerprintIDez();
+   JOYSTICK();
    delay(50); 
 } 
+
+void SETMATRIX() {
+  
+  lc.shutdown(0,false);
+
+  lc.setIntensity(0,8);
+
+  lc.clearDisplay(0);
+}
+
 
 void PIRInit()
 {
@@ -43,7 +71,13 @@ void ButtonInit()
    pinMode(buttonPin, INPUT);
 }
 
-
+void InitRGBLED()
+{
+   pinMode(Rled, OUTPUT); 
+   pinMode(Gled, OUTPUT);
+   pinMode(Bled, OUTPUT);
+ }
+ 
 void OpenDoor()
 {
     servo.write(90); 
@@ -205,3 +239,283 @@ int getFingerprintIDez()
   delay(1000); 
   return finger.fingerID; 
 }
+
+void JOYSTICK(){
+    delay(100); 
+    int b1 = digitalRead(button1);
+    if(b1 == HIGH){
+    joyX = analogRead(JX); 
+    delay (5000);
+    joyY = analogRead(JY); 
+    delay(4000);
+    joySW = analogRead(JSW);
+    setRGB(joyX,joyY,joySW);}
+    else {
+      Serial.print("nu e apasat");
+    }
+    
+  }
+  void JOYSTICK()
+  {
+    delay(100); 
+    joyX = analogRead(JX); 
+    delay (5000);
+    joyY = analogRead(JY); 
+    delay(4000);
+    joySW = analogRead(JSW);
+    setRGB(joyX,joyY,joySW);
+  }
+  
+  void writeArduinoOnMatrix() {
+  
+      byte W[8]={  
+      B00000000,
+      B01000010,
+      B01000010,
+      B01000010,
+      B01011010,
+      B01111110,
+      B01100110,
+      B01000010};
+
+
+      byte E[8]= {
+      B00000000,
+      B00111100,
+      B00100000,
+      B00100000,
+      B00111100,
+      B00100000,
+      B00100000,
+      B00111100
+      };
+
+      byte L[8]={
+      B00000000,
+      B00100000,
+      B00100000,
+      B00100000,
+      B00100000,
+      B00100000,
+      B00100100,
+      B00111100
+      };
+      byte C[8]={
+      B00000000,
+      B00111100,
+      B00100100,
+      B00100000,
+      B00100000,
+      B00100000,
+      B00100100,
+      B00111100};
+      byte O[8]={
+      B00000000,
+      B00111100,
+      B00100100,
+      B00100100,
+      B00100100,
+      B00100100,
+      B00100100,
+      B00111100
+        };
+        byte M[8]{
+      B00000000,
+      B01100110,
+      B01111110,
+      B01011010,
+      B01000010,
+      B01000010,
+      B01000010,
+      B01000010};
+      byte E1[8]={
+      B00000000,
+      B00111100,
+      B00100000,
+      B00100000,
+      B00111100,
+      B00100000,
+      B00100000,
+      B00111100
+        };
+
+
+      byte H[8]={
+      B00000000,
+      B00100100,
+      B00100100,
+      B00100100,
+      B00111100,
+      B00100100,
+      B00100100,
+      B00100100
+      };
+
+      byte O1[8]={
+      B00000000,
+      B00111100,
+      B00100100,
+      B00100100,
+      B00100100,
+      B00100100,
+      B00100100,
+      B00111100
+        };
+      byte M1[8]={
+      B00000000,
+      B01100110,
+      B01111110,
+      B01011010,
+      B01000010,
+      B01000010,
+      B01000010,
+      B01000010
+      };
+      byte E2[8]={
+      B00000000,
+      B00111100,
+      B00100000,
+      B00100000,
+      B00111100,
+      B00100000,
+      B00100000,
+      B00111100
+      };
+
+  byte love[8]={ B00000000,B01100110,B10011001,B10011001,B10000001,B01000010,B00100100,B00011000}; 
+  
+          for (int i=0; i<8; i++){
+          lc.setRow(0,i,W[i]);
+
+          }
+
+          delay(delaytime);
+          for(int i=0; i<8; i++){
+              lc.setRow(0,i,0);// this is for blank
+          }  
+        ////////////////////
+
+
+
+          for (int i=0; i<8; i++){
+          lc.setRow(0,i,E[i]);
+
+          }
+
+          delay(delaytime);
+          for(int i=0; i<8; i++){
+              lc.setRow(0,i,0);// this is for blank
+          }  
+        //////////////////
+
+  
+        for (int i=0; i<8; i++){
+        lc.setRow(0,i,L[i]);
+
+        }
+
+        delay(delaytime);
+        for(int i=0; i<8; i++){
+            lc.setRow(0,i,0);// this is for blank
+        }  
+      /////////////// END of Letter J///////
+
+
+        for (int i=0; i<8; i++){
+        lc.setRow(0,i,C[i]);
+
+        }
+
+        delay(delaytime);
+        for(int i=0; i<8; i++){
+            lc.setRow(0,i,0);// this is for blank
+        }  
+      //////////////////
+
+
+        for (int i=0; i<8; i++){
+        lc.setRow(0,i,O[i]);
+
+        }
+   
+        delay(delaytime);
+        for(int i=0; i<8; i++){
+            lc.setRow(0,i,0);// this is for blank
+        }  
+      /////////////////////
+
+        for (int i=0; i<8; i++){
+        lc.setRow(0,i,M[i]);
+
+        }
+
+        delay(delaytime);
+        for(int i=0; i<8; i++){
+            lc.setRow(0,i,0);// this is for blank
+        }  
+      /////////////////////
+      for (int i=0; i<8; i++){
+        lc.setRow(0,i,E1[i]);
+
+        }
+
+        delay(delaytime);
+        for(int i=0; i<8; i++){
+            lc.setRow(0,i,0);// this is for blank
+        } 
+        /////////////
+          for (int i=0; i<8; i++){
+        lc.setRow(0,i,H[i]);
+
+              }
+
+        delay(delaytime);
+        for(int i=0; i<8; i++){
+            lc.setRow(0,i,0);// this is for blank
+        } 
+        ///////////// O////////
+        for (int i=0; i<8; i++){
+        lc.setRow(0,i,O1[i]);
+
+        }
+
+        delay(delaytime);
+        for(int i=0; i<8; i++) {
+            lc.setRow(0,i,0);
+        }  
+        /////////M/////////
+          for (int i=0; i<8; i++){
+        lc.setRow(0,i,M1[i]);
+
+        }
+
+        delay(delaytime);
+        for(int i=0; i<8; i++){
+            lc.setRow(0,i,0);
+        }  
+      ////////E////////
+        for (int i=0; i<8; i++){
+        lc.setRow(0,i,E2[i]);
+
+        }
+
+        delay(delaytime);
+        for(int i=0; i<8; i++){
+            lc.setRow(0,i,0);
+        }  
+
+        /* love */
+        for (int i=0; i<8; i++){
+        lc.setRow(0,i,love[i]);
+
+        }
+
+        delay(delaytime);
+        delay(delaytime);
+        for(int i=0; i<8; i++){
+            lc.setRow(0,i,0);// this is for blank
+        }  
+}
+
+
+  
