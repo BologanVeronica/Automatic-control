@@ -1,0 +1,207 @@
+#include <Adafruit_Fingerprint.h>
+#include <Adafruit_NeoPixel.h>
+#include <Servo.h>
+Servo servo;
+
+#define mySerial Serial1
+#define PIN  9 //led-strip
+#define NUMPIXELS 10
+#define DELAYVAL 200
+#define LDRPIN A0 
+#define PIR 10
+#define buttonPin 3
+
+int buttonState = 0;
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+SoftwareSerial mySerial1(18, 19);
+Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
+
+
+void setup()  
+{
+  Serial.begin(9600);
+  PIRInit();
+  ButtonInit();
+  OpenDoor();
+
+}
+
+void loop()                    
+{
+   SensorLightData();
+   getFingerprintIDez();
+   delay(50); 
+} 
+
+void PIRInit()
+{
+   pinMode(PIR, INPUT);
+}
+
+void ButtonInit()
+{
+   pinMode(buttonPin, INPUT);
+}
+
+
+void OpenDoor()
+{
+    servo.write(90); 
+  servo.attach(2);
+  while (!Serial); 
+  delay(100);
+  Serial.println("\n\nAdafruit finger detect test");
+  
+  #if defined(_AVR_ATtiny85_) && (F_CPU == 16000000)
+  clock_prescale_set(clock_div_1);
+  #endif
+  
+  pixels.begin(); 
+  finger.begin(57600);
+  delay(5);
+    if (finger.verifyPassword()) 
+        {
+          Serial.println("Found fingerprint sensor!");
+        } 
+    else 
+        {
+          Serial.println("Did not find fingerprint sensor 🙁");
+          while (1) 
+              {
+               
+              delay(1); 
+              }
+        }
+  finger.getTemplateCount();
+  Serial.print("Sensor contains "); Serial.print(finger.templateCount); Serial.println(" templates");
+  Serial.println("Waiting for valid finger...");
+}
+
+
+ void SensorLightData()
+ {
+  int LDRValue = 0;
+  LDRValue = analogRead(LDRPin);
+  Serial.println(LDRValue);
+  if((LDRValue <=300) && (digitalRead(PIR) == HIGH)) 
+       {
+          Serial.println("Motion detected");
+          pixels.clear(); 
+              for(int i=0; i<NUMPIXELS; i++) 
+                   {
+                      pixels.setPixelColor(i, pixels.Color(0, 0, 255));
+                      pixels.show(); 
+                      delay(DELAYVAL);
+                   }
+                          delay(2000);
+                          for(int i=0; i<NUMPIXELS; i++) 
+                       { 
+                            pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+                            pixels.show();
+                            delay(DELAYVAL);
+                        }
+                        
+        }
+
+    buttonState = digitalRead(buttonPin);
+    if (buttonState == HIGH) 
+         {
+            servo.write(170);
+            delay(4000);
+          } 
+      else 
+          {
+            servo.write(90); //usa unchisa
+            delay(1000);
+          }
+          
+ }       
+
+uint8_t getFingerprintID() 
+{
+    uint8_t p = finger.getImage();
+    switch (p) 
+        {
+          case FINGERPRINT_OK:
+            Serial.println("Image taken");
+            break;
+          case FINGERPRINT_NOFINGER:
+            Serial.println("No finger detected");
+            return p;
+          case FINGERPRINT_PACKETRECIEVEERR:
+            Serial.println("Communication error");
+            return p;
+          case FINGERPRINT_IMAGEFAIL:
+            Serial.println("Imaging error");
+            return p;
+          default:
+            Serial.println("Unknown error");
+            return p;
+         }
+  
+      p = finger.image2Tz();
+      
+      switch (p) 
+         {
+            case FINGERPRINT_OK:
+              Serial.println("Image converted");
+              break;
+            case FINGERPRINT_IMAGEMESS:
+              Serial.println("Image too messy");
+              return p;
+            case FINGERPRINT_PACKETRECIEVEERR:
+              Serial.println("Communication error");
+              return p;
+            case FINGERPRINT_FEATUREFAIL:
+              Serial.println("Could not find fingerprint features");
+              return p;
+            case FINGERPRINT_INVALIDIMAGE:
+              Serial.println("Could not find fingerprint features");
+              return p;
+            default:
+              Serial.println("Unknown error");
+              return p;
+          }
+     p = finger.fingerFastSearch();
+  
+         if (p == FINGERPRINT_OK) 
+              {
+                Serial.println("Found a print match!");
+              } 
+         else if (p == FINGERPRINT_PACKETRECIEVEERR) 
+              {
+                Serial.println("Communication error");
+                return p;
+              } 
+                    else if (p == FINGERPRINT_NOTFOUND) 
+                    {
+                      Serial.println("Did not find a match");
+                      return p;
+                    } 
+                        else 
+                        {
+                          Serial.println("Unknown error");
+                          return p;
+                        }   
+                        
+  Serial.print("Found ID #"); Serial.print(finger.fingerID); 
+  Serial.print(" with confidence of "); Serial.println(finger.confidence); 
+  return finger.fingerID;
+}
+
+int getFingerprintIDez() 
+{
+  uint8_t p = finger.getImage();
+  if (p != FINGERPRINT_OK)  return -1;
+  p = finger.image2Tz();
+  if (p != FINGERPRINT_OK)  return -1;
+  p = finger.fingerFastSearch();
+  if (p != FINGERPRINT_OK)  return -1;
+  Serial.print("Found ID #"); Serial.print(finger.fingerID); 
+  Serial.print(" with confidence of "); Serial.println(finger.confidence);
+  servo.write(170); 
+  delay(4000); 
+  servo.write(90); 
+  delay(1000); 
+  return finger.fingerID; 
+}
